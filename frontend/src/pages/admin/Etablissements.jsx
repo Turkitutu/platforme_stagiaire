@@ -228,7 +228,7 @@ const Etablissements = () => {
             dataIndex: 'name',
             key: 'name',
             width: '70%',
-            ...getColumnSearchProps('name', 'Etablissement'),
+            ...getColumnSearchProps('name', 'Rechercher un établissement'),
             sorter: (a, b) => a.name.length - b.name.length,
             render: (text) => <a>{text}</a>,
         },
@@ -319,7 +319,7 @@ const Etablissements = () => {
             </Form>
         </Modal>
         <Button type="primary" onClick={handleAdd} className='mb-4' icon={<PlusCircleFilled />}>
-            Ajouter
+            Ajouter un établissement
         </Button>
         <Table loading={loading} columns={columns} dataSource={data} />
         {contextHolder}

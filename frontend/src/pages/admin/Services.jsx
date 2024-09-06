@@ -13,9 +13,9 @@ const Services = () => {
     const [searchedColumn, setSearchedColumn] = useState('');
     const searchInput = useRef(null);
 
-    const getEtablissements = async () => {
+    const getServices = async () => {
         try {
-            const response = await api.get('/etablissement');
+            const response = await api.get('/service');
             setData(response.data);
             setLoading(false);
         } catch (error) {
@@ -24,11 +24,11 @@ const Services = () => {
     };
 
     useEffect(() => {
-        getEtablissements();
+        getServices();
     }, []);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedEtablissement, setSelectedEtablissement] = useState(null);
+    const [selectedService, setSelectedService] = useState(null);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
 
     const [alert, contextHolder] = notification.useNotification();
@@ -38,13 +38,13 @@ const Services = () => {
         console.log(values);
         setLoadingSubmit(true);
 
-        if (!selectedEtablissement) {
-            api.post('/etablissement', values)
+        if (!selectedService) {
+            api.post('/service', values)
                 .then(response => {
                     setData([...data, response.data]);
                     alert.success({
-                        message: 'Niveau établissement',
-                        description: 'Votre établissement a été ajouté avec succès',
+                        message: 'Niveau service ajouté',
+                        description: 'Votre service a été ajouté avec succès',
                     });
                     setIsModalOpen(false);
                 })
@@ -53,24 +53,24 @@ const Services = () => {
                     alert.error({
                         message: 'Erreur',
                         description:
-                            'Erreur lors de l\'ajout de l\'établissement',
+                            'Erreur lors de l\'ajout du service.',
                     });
                 })
                 .finally(() => {
                     setLoadingSubmit(false);
                 });
         } else {
-            api.put(`/etablissement/${selectedEtablissement._id}`, values)
+            api.put(`/service/${selectedService._id}`, values)
                 .then(response => {
                     const index = data.findIndex(item => item._id === response.data._id);
                     const newData = [...data];
                     newData[index] = response.data;
                     setData(newData);
                     alert.success({
-                        message: 'Établissement modifié',
-                        description: 'Votre établissement a été modifié avec succès',
+                        message: 'Service modifié',
+                        description: 'Votre service a été modifié avec succès',
                     });
-                    setSelectedEtablissement(null);
+                    setSelectedService(null);
                     setLoadingSubmit(false);
                     setIsModalOpen(false);
                 })
@@ -79,7 +79,7 @@ const Services = () => {
                     alert.error({
                         message: 'Erreur',
                         description:
-                            'Erreur lors de la nom de l\'établissement',
+                            'Erreur lors de la modification du service.',
                     });
                     setLoadingSubmit(false);
                 })
@@ -88,8 +88,8 @@ const Services = () => {
 
     const confirmDelete = (record) => {
         Modal.confirm({
-            title: 'Supprimer l\'établissement',
-            content: 'Êtes-vous sûr de vouloir supprimer cet établissement ?',
+            title: 'Supprimer le service',
+            content: 'Êtes-vous sûr de vouloir supprimer ce service ?',
             okText: 'Supprimer',
             okType: 'danger',
             cancelText: 'Annuler',
@@ -98,12 +98,12 @@ const Services = () => {
     }
 
     const handleDelete = (record) => {
-        api.delete(`/etablissement/${record._id}`)
+        api.delete(`/service/${record._id}`)
             .then(() => {
                 setData(data.filter(item => item._id !== record._id));
                 alert.success({
-                    message: 'Etablissement supprimé',
-                    description: 'Votre établissement a été supprimé avec succès',
+                    message: 'Service supprimé',
+                    description: 'Votre service a été supprimé avec succès',
                 });
             })
             .catch(error => {
@@ -111,27 +111,25 @@ const Services = () => {
                 alert.error({
                     message: 'Erreur',
                     description:
-                        'Erreur lors de la suppression de l\'établissement',
+                        'Erreur lors de la suppression du service.',
                 });
             });
     };
 
     const handleEdit = (record) => {
-        setSelectedEtablissement(record);
+        setSelectedService(record);
         form.setFieldValue('name', record.name);
-        form.setFieldValue('category', record.category);
         setIsModalOpen(true);
     };
 
     const handleAdd = () => {
         form.setFieldValue('name', null);
-        form.setFieldValue('category', null);
-        setSelectedEtablissement(null);
+        setSelectedService(null);
         setIsModalOpen(true);
     };
 
     const handleCancel = () => {
-        setSelectedEtablissement(null);
+        setSelectedService(null);
         setIsModalOpen(false);
     };
 
@@ -224,33 +222,13 @@ const Services = () => {
 
     const columns = [
         {
-            title: 'Les établissement',
+            title: 'Les services',
             dataIndex: 'name',
             key: 'name',
-            width: '70%',
-            ...getColumnSearchProps('name', 'Etablissement'),
+            width: '80%',
+            ...getColumnSearchProps('name', 'Rechercher un service'),
             sorter: (a, b) => a.name.length - b.name.length,
             render: (text) => <a>{text}</a>,
-        },
-        {
-            title: 'Catégorie',
-            dataIndex: 'category',
-            key: 'category',
-            width: '17%',
-            showSorterTooltip: { target: 'full-header' },
-            filters: [
-                {
-                    text: 'Établissements',
-                    value: 'etablissement',
-                },
-                {
-                    text: 'Centres de formation',
-                    value: 'center',
-                },
-            ],
-            onFilter: (value, record) => record.category.indexOf(value) === 0,
-            sorter: (a, b) => a.category.length - b.category.length,
-            render: (text, record) => <>{record.category == 'etablissement' ? <Tag color="cyan">Établissement</Tag> : <Tag color="gold">Centre de formation</Tag>}</>,
         },
         {
             title: 'Action',
@@ -270,7 +248,7 @@ const Services = () => {
 
     return <>
         <Modal
-            title={selectedEtablissement ? 'Modifier l\'établissement' : 'Ajouter un établissement'}
+            title={selectedService ? 'Modifier le service' : 'Ajouter un service'}
             open={isModalOpen}
             onCancel={handleCancel}
             footer={[
@@ -278,7 +256,7 @@ const Services = () => {
                     Annuler
                 </Button>,
                 <Button key="submit" type="primary" loading={loadingSubmit} onClick={() => form.submit()}>
-                    {selectedEtablissement ? 'Modifier' : 'Ajouter'}
+                    {selectedService ? 'Modifier' : 'Ajouter'}
                 </Button>,
             ]}
         >
@@ -286,40 +264,21 @@ const Services = () => {
                 form={form}
                 layout="vertical"
                 onFinish={onFinish}
-                initialValues={{ name: selectedEtablissement ? selectedEtablissement.name : '' }}
+                initialValues={{ name: selectedService ? selectedService.name : '' }}
             >
                 <Form.Item
-                    label="Nom de l'établissement"
+                    label="Nom de le service"
                     name="name"
                     rules={[
-                        { required: true, message: 'Veuillez entrer le nom de l\'établissement' },
+                        { required: true, message: 'Veuillez entrer le nom du service' },
                     ]}
                 >
-                    <Input size="small" placeholder="Entrez le nom de l'établissement" className="border border-gray-300 rounded-md p-2" />
-                </Form.Item>
-
-                <Form.Item
-                    label="Catégorie"
-                    name="category"
-                    rules={[
-                        { required: true, message: 'Veuillez choisir la catégorie de l\'établissement' },
-                    ]}
-                >
-                    <Select
-                        size='large'
-                        placeholder="Choisir la catégorie"
-                        defaultValue="etablissement"
-                        className="w-full"
-                        options={[
-                            { label: 'Établissement', value: 'etablissement' },
-                            { label: 'Centre de formation', value: 'center' },
-                        ]}
-                    />
+                    <Input size="small" placeholder="Entrez le nom de service" className=" border border-gray-300 rounded-md p-2" />
                 </Form.Item>
             </Form>
         </Modal>
         <Button type="primary" onClick={handleAdd} className='mb-4' icon={<PlusCircleFilled />}>
-            Ajouter
+            Ajouter un service
         </Button>
         <Table loading={loading} columns={columns} dataSource={data} />
         {contextHolder}
