@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Form, Input, DatePicker, Select, Button, Upload } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Form, Input, DatePicker, Select, Button, Upload, Spin, notification } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 
 import 'antd/dist/reset.css';
 
@@ -7,7 +8,7 @@ const { Option } = Select;
 
 import { UploadOutlined } from '@ant-design/icons';
 
-import Navbar from '../components/Navbar';
+import api from '@/services/api';
 
 
 const stageTypes = {
@@ -23,6 +24,59 @@ const stageTypes = {
 
 const DemandeDeStage = () => {
     const [selectedStageType, setSelectedStageType] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [options, setOptions] = useState([]);
+    const [alert, contextHolder] = notification.useNotification();
+    const [showOtherInput, setShowOtherInput] = useState(false);
+    const [form] = Form.useForm();
+
+
+    const getData = async () => {
+        try {
+            const response = await api.get('/etablissement');
+
+            const etablissementOptions = response.data
+                .filter((item) => item.category === 'etablissement')
+                .map((item) => ({
+                    label: item.name,
+                    value: item._id,
+                }));
+
+            const centerOptions = response.data
+                .filter((item) => item.category === 'center')
+                .map((item) => ({
+                    label: item.name,
+                    value: item._id,
+                }));
+
+            setOptions([
+                {
+                    label: 'Les établissements',
+                    title: 'Les établissements',
+                    options: etablissementOptions,
+                },
+                {
+                    label: 'Centres de formation',
+                    title: 'Centres de formation',
+                    options: centerOptions,
+                },
+            ]);
+
+
+            setLoading(false);
+        } catch (error) {
+            console.error(error);
+            alert.error({
+                message: 'Erreur',
+                description: 'Une erreur s\'est produite lors du chargement des données. Veuillez réessayer plus tard.'
+            });
+        }
+    }
+
+    useEffect(() => {
+        getData();
+    }, []);
+
 
     const onFinish = (values) => {
         console.log('Form values:', values);
@@ -32,135 +86,215 @@ const DemandeDeStage = () => {
         setSelectedStageType(value);
     };
 
+    const onEtablissementSelectionMode = (mode) => {
+        if (mode === 0) {
+            form.setFieldValue('etablissement', { value: 'other', label: 'Autre' });
+            form.setFieldValue('autreEtablissement', undefined);
+            setShowOtherInput(true);
+        }
+        else {
+            form.setFieldValue('etablissement', undefined);
+            form.setFieldValue('autreEtablissement', undefined);
+            setShowOtherInput(false);
+        }
+    }
+
     return (
-        <main className="bg-white w-full max-w-2xl p-8 mt-20 rounded-lg shadow-lg">
-            <h1 className="text-2xl font-bold mb-6">Demande de Stage</h1>
-            <p className="mb-4">Bienvenue sur le portail de demande de stage. Veuillez remplir le formulaire ci-dessous pour postuler.</p>
+        <>
+            {contextHolder}
+            <main className="bg-white w-full max-w-2xl p-8 mt-20 rounded-lg shadow-lg">
+                <h1 className="text-2xl text-gray-800 text-center font-semibold mb-6">Demande de Stage</h1>
+                {loading ?
+                    <div className='flex justify-center items-center w-full h-[50vh]'>
+                        <Spin indicator={<LoadingOutlined style={{ fontSize: 65 }} spin />} />
+                    </div>
+                    :
+                    <div>
+                        <p className="mb-4 text-gray-600">Bienvenue sur le portail de demande de stage. Veuillez remplir le formulaire ci-dessous pour postuler.</p>
 
-            <Form
-                layout="vertical"
-                onFinish={onFinish}
-            >
-                <Form.Item
-                    name="name"
-                    label="Nom"
-                    rules={[{ required: true, message: 'Veuillez entrer votre nom' }]}
-                >
-                    <Input placeholder="Entrez votre nom" className="rounded-md" />
-                </Form.Item>
+                        <Form
+                            layout="vertical"
+                            onFinish={onFinish}
+                            form={form}
+                        >
+                            <Form.Item
+                                name="name"
+                                label="Nom"
+                                rules={[{ required: true, message: 'Veuillez entrer votre nom' }]}
+                            >
+                                <Input placeholder="Entrez votre nom" className="rounded-md" />
+                            </Form.Item>
 
-                <Form.Item
-                    name="surname"
-                    label="Prénom"
-                    rules={[{ required: true, message: 'Veuillez entrer votre prénom' }]}
-                >
-                    <Input placeholder="Entrez votre prénom" className="rounded-md" />
-                </Form.Item>
+                            <Form.Item
+                                name="surname"
+                                label="Prénom"
+                                rules={[{ required: true, message: 'Veuillez entrer votre prénom' }]}
+                            >
+                                <Input placeholder="Entrez votre prénom" className="rounded-md" />
+                            </Form.Item>
 
-                <Form.Item
-                    name="dob"
-                    label="Date de naissance"
-                    rules={[{ required: true, message: 'Veuillez sélectionner votre date de naissance' }]}
-                >
-                    <DatePicker className="w-full rounded-md" />
-                </Form.Item>
+                            <Form.Item
+                                name="dob"
+                                label="Date de naissance"
+                                rules={[{ required: true, message: 'Veuillez sélectionner votre date de naissance' }]}
+                            >
+                                <DatePicker className="w-full rounded-md" />
+                            </Form.Item>
 
-                <Form.Item
-                    name="nationality"
-                    label="Nationalité"
-                    rules={[{ required: true, message: 'Veuillez sélectionner votre nationalité' }]}
-                >
-                    <Select placeholder="Sélectionnez votre nationalité" className="rounded-md">
-                        <Option value="Tunisian">Tunisienne</Option>
-                        <Option value="Other">Autre</Option>
-                    </Select>
-                </Form.Item>
+                            <Form.Item
+                                name="nationality"
+                                label="Nationalité"
+                                rules={[{ required: true, message: 'Veuillez sélectionner votre nationalité' }]}
+                            >
+                                <Select placeholder="Sélectionnez votre nationalité" className="rounded-md">
+                                    <Option value="Tunisian">Tunisienne</Option>
+                                    <Option value="Other">Autre</Option>
+                                </Select>
+                            </Form.Item>
 
-                <Form.Item
-                    name="phone"
-                    label="Numéro de téléphone"
-                    rules={[{ required: true, message: 'Veuillez entrer votre numéro de téléphone' }]}
-                >
-                    <Input placeholder="Entrez votre numéro de téléphone" className="rounded-md" />
-                </Form.Item>
+                            <Form.Item
+                                name="phone"
+                                label="Numéro de téléphone"
+                                rules={[{ required: true, message: 'Veuillez entrer votre numéro de téléphone' }]}
+                            >
+                                <Input placeholder="Entrez votre numéro de téléphone" className="rounded-md" />
+                            </Form.Item>
 
-                <Form.Item
-                    name="email"
-                    label="Email"
-                    rules={[{ required: true, message: 'Veuillez entrer votre adresse email' }]}
-                >
-                    <Input placeholder="Entrez votre adresse email" className="rounded-md" />
-                </Form.Item>
+                            <Form.Item
+                                name="email"
+                                label="Email"
+                                rules={[{ required: true, message: 'Veuillez entrer votre adresse email' }]}
+                            >
+                                <Input placeholder="Entrez votre adresse email" className="rounded-md" />
+                            </Form.Item>
 
-                <Form.Item
-                    name="institution"
-                    label="Établissement d'enseignement"
-                    rules={[{ required: true, message: 'Veuillez entrer votre établissement d\'enseignement' }]}
-                >
-                    <Input placeholder="Entrez votre établissement" className="rounded-md" />
-                </Form.Item>
 
-                <Form.Item
-                    name="specialization"
-                    label="Spécialisation"
-                    rules={[{ required: true, message: 'Veuillez entrer votre spécialisation' }]}
-                >
-                    <Input placeholder="Entrez votre spécialisation" className="rounded-md" />
-                </Form.Item>
+                            <div className="relative">
+                                <Form.Item
+                                    name="etablissement"
+                                    label="Établissement d'enseignement"
+                                    rules={[
+                                        { required: true, message: 'Veuillez entrer votre établissement d\'enseignement' },
+                                    ]}
+                                >
+                                    <Select
+                                        showSearch
+                                        filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                        placeholder="Sélectionnez votre établissement"
+                                        className="rounded-md"
+                                        disabled={showOtherInput}
+                                        options={options}
+                                    />
 
-                <Form.Item
-                    name="degree"
-                    label="Diplôme"
-                    rules={[{ required: true, message: 'Veuillez entrer votre diplôme' }]}
-                >
-                    <Input placeholder="Entrez votre diplôme" className="rounded-md" />
-                </Form.Item>
 
-                <Form.Item
-                    name="stageType"
-                    label="Type de stage"
-                    rules={[{ required: true, message: 'Veuillez sélectionner votre type de stage' }]}
-                >
-                    <Select
-                        placeholder="Sélectionnez votre type de stage"
-                        onChange={handleStageTypeChange}
-                        className="rounded-md"
-                    >
-                        {Object.keys(stageTypes).map((key) => (
-                            <Option key={key} value={key}>{stageTypes[key]}</Option>
-                        ))}
-                    </Select>
-                </Form.Item>
+                                </Form.Item>
+                                {!showOtherInput &&
+                                    (<span className={"absolute ms-2 text-gray-500 top-16 right-1"} style={{ fontSize: 12 }}>
+                                        Pas trouvé votre établissement ?{' '}
+                                        <span
+                                            className="text-blue-500 cursor-pointer hover:text-blue-650"
+                                            role="button"
+                                            tabIndex="0"
+                                            onClick={() => onEtablissementSelectionMode(0)}
+                                        >
+                                            Définir un autre
+                                        </span>
 
-                {selectedStageType === 'stage_pfe' && (
-                    <Form.Item
-                        name="pfeSubject"
-                        label="Sujet"
-                        rules={[{ required: true, message: 'Veuillez entrer votre sujet de PFE' }]}
-                    >
-                        <Input.TextArea placeholder="Proposer un sujet" rows={4} className="rounded-md" />
-                    </Form.Item>
-                )}
+                                    </span>)}
+                            </div>
 
-                <Form.Item
-                    name="pieceJointe"
-                    label="Pièce Jointe (Demande de stage et une carte séjour si vous êtes étranger)"
-                    valuePropName="fileList"
-                    getValueFromEvent={(e) => Array.isArray(e) ? e : e && e.fileList}
-                    rules={[{ required: true, message: 'Veuillez télécharger le document nécessaire' }]}
-                >
-                    <Upload name="file" beforeUpload={() => false} listType="picture">
-                        <Button icon={<UploadOutlined />}>Cliquez pour télécharger</Button>
-                    </Upload>
-                </Form.Item>
+                            {showOtherInput && (<div className="relative">
+                                <Form.Item
+                                    name="autreEtablissement"
+                                    label="Autre établissement"
+                                    rules={[{ required: true, message: 'Veuillez entrer le nom de votre établissement' }]}
+                                >
+                                    <Input
+                                        placeholder="Entrez le nom de votre établissement"
+                                        className="rounded-md"
+                                    />
 
-                <Form.Item>
-                    <Button type="primary" htmlType="submit" className="w-full mt-4 rounded-md">
-                        Soumettre la demande
-                    </Button>
-                </Form.Item>
-            </Form>
-        </main>
+                                </Form.Item>
+                                <span className={"absolute ms-2 text-gray-500 top-16 right-1"} style={{ fontSize: 12 }}>
+                                    Pas trouvé votre établissement ?{' '}
+                                    <span
+                                        className="text-blue-500 cursor-pointer hover:text-blue-650"
+                                        role="button"
+                                        tabIndex="0"
+                                        onClick={() => onEtablissementSelectionMode(1)}
+                                    >
+                                        Revenir à la sélection
+                                    </span>
+
+                                </span>
+                            </div>
+                            )}
+
+                            <Form.Item
+                                className="pt-4"
+                                name="specialization"
+                                label="Spécialisation"
+                                rules={[{ required: true, message: 'Veuillez entrer votre spécialisation' }]}
+                            >
+                                <Input placeholder="Entrez votre spécialisation" className="rounded-md" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="degree"
+                                label="Diplôme"
+                                rules={[{ required: true, message: 'Veuillez entrer votre diplôme' }]}
+                            >
+                                <Input placeholder="Entrez votre diplôme" className="rounded-md" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="stageType"
+                                label="Type de stage"
+                                rules={[{ required: true, message: 'Veuillez sélectionner votre type de stage' }]}
+                            >
+                                <Select
+                                    placeholder="Sélectionnez votre type de stage"
+                                    onChange={handleStageTypeChange}
+                                    className="rounded-md"
+                                >
+                                    {Object.keys(stageTypes).map((key) => (
+                                        <Option key={key} value={key}>{stageTypes[key]}</Option>
+                                    ))}
+                                </Select>
+                            </Form.Item>
+
+                            {selectedStageType === 'stage_pfe' && (
+                                <Form.Item
+                                    name="pfeSubject"
+                                    label="Sujet"
+                                    rules={[{ required: true, message: 'Veuillez entrer votre sujet de PFE' }]}
+                                >
+                                    <Input.TextArea placeholder="Proposer un sujet" rows={4} className="rounded-md" />
+                                </Form.Item>
+                            )}
+
+                            <Form.Item
+                                name="pieceJointe"
+                                label="Pièce Jointe (Demande de stage et une carte séjour si vous êtes étranger)"
+                                valuePropName="fileList"
+                                getValueFromEvent={(e) => Array.isArray(e) ? e : e && e.fileList}
+                                rules={[{ required: true, message: 'Veuillez télécharger le document nécessaire' }]}
+                            >
+                                <Upload name="file" beforeUpload={() => false} listType="picture">
+                                    <Button icon={<UploadOutlined />}>Cliquez pour télécharger</Button>
+                                </Upload>
+                            </Form.Item>
+
+                            <Form.Item>
+                                <Button type="primary" htmlType="submit" className="w-full mt-4 rounded-md">
+                                    Soumettre la demande
+                                </Button>
+                            </Form.Item>
+                        </Form>
+                    </div >}
+
+            </main >
+        </>
     );
 };
 
