@@ -79,6 +79,7 @@ const DemandeDeStage = () => {
 
 
     const onFinish = (values) => {
+        values.birthdate = new Date(values.birthdate).toISOString();
         console.log('Form values:', values);
     };
 
@@ -118,7 +119,7 @@ const DemandeDeStage = () => {
                             form={form}
                         >
                             <Form.Item
-                                name="name"
+                                name="first_name"
                                 label="Nom"
                                 rules={[{ required: true, message: 'Veuillez entrer votre nom' }]}
                             >
@@ -126,7 +127,7 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
-                                name="surname"
+                                name="last_name"
                                 label="Prénom"
                                 rules={[{ required: true, message: 'Veuillez entrer votre prénom' }]}
                             >
@@ -134,7 +135,7 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
-                                name="dob"
+                                name="birthdate"
                                 label="Date de naissance"
                                 rules={[{ required: true, message: 'Veuillez sélectionner votre date de naissance' }]}
                             >
@@ -199,13 +200,12 @@ const DemandeDeStage = () => {
                                         >
                                             Définir un autre
                                         </span>
-
                                     </span>)}
                             </div>
 
                             {showOtherInput && (<div className="relative">
                                 <Form.Item
-                                    name="autreEtablissement"
+                                    name="autre_etablissement"
                                     label="Autre établissement"
                                     rules={[{ required: true, message: 'Veuillez entrer le nom de votre établissement' }]}
                                 >
@@ -232,7 +232,7 @@ const DemandeDeStage = () => {
 
                             <Form.Item
                                 className="pt-4"
-                                name="specialization"
+                                name="specialty"
                                 label="Spécialisation"
                                 rules={[{ required: true, message: 'Veuillez entrer votre spécialisation' }]}
                             >
@@ -240,7 +240,7 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
-                                name="degree"
+                                name="diplome"
                                 label="Diplôme"
                                 rules={[{ required: true, message: 'Veuillez entrer votre diplôme' }]}
                             >
@@ -248,7 +248,7 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
-                                name="stageType"
+                                name="type_stage"
                                 label="Type de stage"
                                 rules={[{ required: true, message: 'Veuillez sélectionner votre type de stage' }]}
                             >
@@ -265,7 +265,7 @@ const DemandeDeStage = () => {
 
                             {selectedStageType === 'stage_pfe' && (
                                 <Form.Item
-                                    name="pfeSubject"
+                                    name="pfe_subject"
                                     label="Sujet"
                                     rules={[{ required: true, message: 'Veuillez entrer votre sujet de PFE' }]}
                                 >
@@ -274,8 +274,8 @@ const DemandeDeStage = () => {
                             )}
 
                             <Form.Item
-                                name="pieceJointe"
-                                label="Pièce Jointe (Demande de stage et une carte séjour si vous êtes étranger)"
+                                name="attachments"
+                                label="Pièce Jointe (Demande de stage & Une carte séjour si vous êtes étranger)"
                                 valuePropName="fileList"
                                 getValueFromEvent={(e) => Array.isArray(e) ? e : e && e.fileList}
                                 rules={[{ required: true, message: 'Veuillez télécharger le document nécessaire' }]}

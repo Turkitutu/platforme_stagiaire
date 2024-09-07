@@ -37,10 +37,11 @@ const Navbar = ({ fixed } = { fixed: false }) => {
   return (
     <header className={`w-full p-4 top-0 z-50 transition-all duration-300 bg-blue-600 shadow-lg flex justify-between items-center` + (fixed ? ' fixed' : '')}>
       <div className="text-lg font-bold text-white cursor-pointer" onClick={() => window.location.href = '/'}>
-        <div className="flex items-center">
+        {/* <div className="flex items-center">
           <img src={logo} alt="Les Ciments de Bizerte" className="h-12 mr-4" />
           <span className="text-white text-2xl font-bold">Les Ciments de Bizerte <p className="text-sm font-medium text-white">Platforme Stagiaire</p></span>
-        </div>
+        </div> */}
+        Stream
       </div>
 
 
