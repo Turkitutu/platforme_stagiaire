@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, DatePicker, Select, Button, Upload, Spin, notification } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
+import { Form, Input, DatePicker, Select, Button, Upload, Spin, Radio, InputNumber, notification } from 'antd';
+import { LoadingOutlined, UploadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 
 import 'antd/dist/reset.css';
+import api from '@/services/api';
+import { useNavigate } from 'react-router-dom';
 
 const { Option } = Select;
-
-import { UploadOutlined } from '@ant-design/icons';
-
-import api from '@/services/api';
-
 
 const stageTypes = {
     stage_initiation: 'Stage d\'initiation',
@@ -20,16 +17,17 @@ const stageTypes = {
     stage_ingenieur: 'Stage ingénieur',
     stage_pratique: 'Stage pratique',
     alternance: 'Alternance',
-}
+};
 
 const DemandeDeStage = () => {
     const [selectedStageType, setSelectedStageType] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [options, setOptions] = useState([]);
     const [alert, contextHolder] = notification.useNotification();
     const [showOtherInput, setShowOtherInput] = useState(false);
     const [form] = Form.useForm();
-
+    const navigate = useNavigate();
 
     const getData = async () => {
         try {
@@ -62,25 +60,54 @@ const DemandeDeStage = () => {
                 },
             ]);
 
-
             setLoading(false);
         } catch (error) {
             console.error(error);
             alert.error({
                 message: 'Erreur',
-                description: 'Une erreur s\'est produite lors du chargement des données. Veuillez réessayer plus tard.'
+                description: 'Une erreur s\'est produite lors du chargement des données. Veuillez réessayer plus tard.',
             });
         }
-    }
+    };
 
     useEffect(() => {
         getData();
+        form.setFieldValue('document_type', 'cin');
     }, []);
 
-
-    const onFinish = (values) => {
+    const handleSubmit = (values) => {
         values.birthdate = new Date(values.birthdate).toISOString();
-        console.log('Form values:', values);
+        delete values.document_type;
+
+        setLoading(true);
+
+        const formData = new FormData();
+        Object.entries(values).forEach(([key, value]) => {
+            if (key === 'attachments') {
+                value.forEach((file) => {
+                    formData.append('attachments', file.originFileObj);
+                });
+            } else {
+                formData.append(key, value);
+            }
+        });
+
+        api.post('/demande_stage', formData).then(() => {
+            alert.success({
+                message: 'Succès',
+                description: 'Votre demande a été soumise avec succès.',
+            });
+
+            navigate('/');
+        }).catch((error) => {
+            console.error(error);
+            alert.error({
+                message: 'Erreur',
+                description: 'Une erreur s\'est produite lors de la soumission de votre demande. Veuillez réessayer plus tard.',
+            });
+        }).finally(() => {
+            setLoading(false);
+        });
     };
 
     const handleStageTypeChange = (value) => {
@@ -92,32 +119,29 @@ const DemandeDeStage = () => {
             form.setFieldValue('etablissement', { value: 'other', label: 'Autre' });
             form.setFieldValue('autreEtablissement', undefined);
             setShowOtherInput(true);
-        }
-        else {
+        } else {
             form.setFieldValue('etablissement', undefined);
             form.setFieldValue('autreEtablissement', undefined);
             setShowOtherInput(false);
         }
-    }
+    };
 
     return (
         <>
             {contextHolder}
             <main className="bg-white w-full max-w-2xl p-8 mt-20 rounded-lg shadow-lg">
                 <h1 className="text-2xl text-gray-800 text-center font-semibold mb-6">Demande de Stage</h1>
-                {loading ?
-                    <div className='flex justify-center items-center w-full h-[50vh]'>
+                {loading ? (
+                    <div className="flex justify-center items-center w-full h-[50vh]">
                         <Spin indicator={<LoadingOutlined style={{ fontSize: 65 }} spin />} />
                     </div>
-                    :
+                ) : (
                     <div>
-                        <p className="mb-4 text-gray-600">Bienvenue sur le portail de demande de stage. Veuillez remplir le formulaire ci-dessous pour postuler.</p>
+                        <p className="mb-4 text-gray-600">
+                            Bienvenue sur le portail de demande de stage. Veuillez remplir le formulaire ci-dessous pour postuler.
+                        </p>
 
-                        <Form
-                            layout="vertical"
-                            onFinish={onFinish}
-                            form={form}
-                        >
+                        <Form layout="vertical" onFinish={handleSubmit} form={form}>
                             <Form.Item
                                 name="first_name"
                                 label="Nom"
@@ -143,6 +167,17 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
+                                name="gender"
+                                label="Genre"
+                                rules={[{ required: true, message: 'Veuillez sélectionner votre genre' }]}
+                            >
+                                <Radio.Group>
+                                    <Radio value="male">Homme</Radio>
+                                    <Radio value="female">Femme</Radio>
+                                </Radio.Group>
+                            </Form.Item>
+
+                            <Form.Item
                                 name="nationality"
                                 label="Nationalité"
                                 rules={[{ required: true, message: 'Veuillez sélectionner votre nationalité' }]}
@@ -154,11 +189,53 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
+                                name="document_type"
+                                label="Type de document"
+                                rules={[{ required: true, message: 'Veuillez sélectionner CIN ou Passeport' }]}
+                            >
+                                <Radio.Group>
+                                    <Radio value="cin">CIN</Radio>
+                                    <Radio value="passport">Passeport</Radio>
+                                </Radio.Group>
+                            </Form.Item>
+
+                            <Form.Item
+                                shouldUpdate={(prevValues, currentValues) => prevValues.document_type !== currentValues.document_type}
+                            >
+                                {({ getFieldValue }) => getFieldValue('document_type') === 'passport' ? (
+                                    <Form.Item
+                                        name="passport"
+                                        label="Passeport"
+                                        rules={[{ required: true, message: 'Veuillez entrer votre passeport' }]}
+                                    >
+                                        <Input placeholder="Entrez votre passeport" className="rounded-md" />
+                                    </Form.Item>
+                                ) : (
+                                    <Form.Item
+                                        name="cin"
+                                        label="CIN"
+                                        rules={[{ required: true, message: 'Veuillez entrer votre CIN' }]}
+                                    >
+                                        <Input placeholder="Entrez votre CIN" className="rounded-md" />
+                                    </Form.Item>
+                                )}
+                            </Form.Item>
+
+
+                            <Form.Item
                                 name="phone"
                                 label="Numéro de téléphone"
                                 rules={[{ required: true, message: 'Veuillez entrer votre numéro de téléphone' }]}
                             >
                                 <Input placeholder="Entrez votre numéro de téléphone" className="rounded-md" />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="address"
+                                label="Adresse"
+                                rules={[{ required: true, message: 'Veuillez entrer votre adresse' }]}
+                            >
+                                <Input placeholder="Entrez votre adresse" className="rounded-md" />
                             </Form.Item>
 
                             <Form.Item
@@ -169,14 +246,11 @@ const DemandeDeStage = () => {
                                 <Input placeholder="Entrez votre adresse email" className="rounded-md" />
                             </Form.Item>
 
-
                             <div className="relative">
                                 <Form.Item
                                     name="etablissement"
                                     label="Établissement d'enseignement"
-                                    rules={[
-                                        { required: true, message: 'Veuillez entrer votre établissement d\'enseignement' },
-                                    ]}
+                                    rules={[{ required: true, message: 'Veuillez entrer votre établissement d\'enseignement' }]}
                                 >
                                     <Select
                                         showSearch
@@ -186,11 +260,9 @@ const DemandeDeStage = () => {
                                         disabled={showOtherInput}
                                         options={options}
                                     />
-
-
                                 </Form.Item>
-                                {!showOtherInput &&
-                                    (<span className={"absolute ms-2 text-gray-500 top-16 right-1"} style={{ fontSize: 12 }}>
+                                {!showOtherInput && (
+                                    <span className="absolute ms-2 text-gray-500 top-16 right-1" style={{ fontSize: 12 }}>
                                         Pas trouvé votre établissement ?{' '}
                                         <span
                                             className="text-blue-500 cursor-pointer hover:text-blue-650"
@@ -200,34 +272,31 @@ const DemandeDeStage = () => {
                                         >
                                             Définir un autre
                                         </span>
-                                    </span>)}
-                            </div>
-
-                            {showOtherInput && (<div className="relative">
-                                <Form.Item
-                                    name="autre_etablissement"
-                                    label="Autre établissement"
-                                    rules={[{ required: true, message: 'Veuillez entrer le nom de votre établissement' }]}
-                                >
-                                    <Input
-                                        placeholder="Entrez le nom de votre établissement"
-                                        className="rounded-md"
-                                    />
-
-                                </Form.Item>
-                                <span className={"absolute ms-2 text-gray-500 top-16 right-1"} style={{ fontSize: 12 }}>
-                                    Pas trouvé votre établissement ?{' '}
-                                    <span
-                                        className="text-blue-500 cursor-pointer hover:text-blue-650"
-                                        role="button"
-                                        tabIndex="0"
-                                        onClick={() => onEtablissementSelectionMode(1)}
-                                    >
-                                        Revenir à la sélection
                                     </span>
-
-                                </span>
+                                )}
                             </div>
+
+                            {showOtherInput && (
+                                <div className="relative">
+                                    <Form.Item
+                                        name="autre_etablissement"
+                                        label="Autre établissement"
+                                        rules={[{ required: true, message: 'Veuillez entrer le nom de votre établissement' }]}
+                                    >
+                                        <Input placeholder="Entrez le nom de votre établissement" className="rounded-md" />
+                                    </Form.Item>
+                                    <span className="absolute ms-2 text-gray-500 top-16 right-1" style={{ fontSize: 12 }}>
+                                        Revenir à la sélection{' '}
+                                        <span
+                                            className="text-blue-500 cursor-pointer hover:text-blue-650"
+                                            role="button"
+                                            tabIndex="0"
+                                            onClick={() => onEtablissementSelectionMode(1)}
+                                        >
+                                            ici
+                                        </span>
+                                    </span>
+                                </div>
                             )}
 
                             <Form.Item
@@ -248,19 +317,28 @@ const DemandeDeStage = () => {
                             </Form.Item>
 
                             <Form.Item
+                                name="niveau"
+                                label="Niveau d'étude"
+                                rules={[{ required: true, message: 'Veuillez entrer votre niveau d\'étude' }]}
+                            >
+                                <Input placeholder="Entrez votre niveau d'étude" className="rounded-md" />
+                            </Form.Item>
+
+                            <Form.Item
                                 name="type_stage"
                                 label="Type de stage"
-                                rules={[{ required: true, message: 'Veuillez sélectionner votre type de stage' }]}
+                                rules={[{ required: true, message: 'Veuillez sélectionner le type de stage' }]}
                             >
                                 <Select
-                                    placeholder="Sélectionnez votre type de stage"
-                                    onChange={handleStageTypeChange}
+
+                                    placeholder="Sélectionnez le type de stage"
                                     className="rounded-md"
-                                >
-                                    {Object.keys(stageTypes).map((key) => (
-                                        <Option key={key} value={key}>{stageTypes[key]}</Option>
-                                    ))}
-                                </Select>
+                                    options={Object.entries(stageTypes).map(([key, value]) => ({
+                                        value: key,
+                                        label: value,
+                                    }))}
+                                    onChange={handleStageTypeChange}
+                                />
                             </Form.Item>
 
                             {selectedStageType === 'stage_pfe' && (
@@ -272,6 +350,14 @@ const DemandeDeStage = () => {
                                     <Input.TextArea placeholder="Proposer un sujet" rows={4} className="rounded-md" />
                                 </Form.Item>
                             )}
+
+                            <Form.Item
+                                name="stage_duration"
+                                label="Durée de stage (en mois)"
+                                rules={[{ required: true, message: 'Veuillez entrer la durée de votre stage' }]}
+                            >
+                                <InputNumber prefix={<ClockCircleOutlined />} step={1} suffix="Mois" min={1} placeholder="Entrez la durée de votre stage" className="w-52 rounded-md" />
+                            </Form.Item>
 
                             <Form.Item
                                 name="attachments"
@@ -291,9 +377,9 @@ const DemandeDeStage = () => {
                                 </Button>
                             </Form.Item>
                         </Form>
-                    </div >}
-
-            </main >
+                    </div>
+                )}
+            </main>
         </>
     );
 };

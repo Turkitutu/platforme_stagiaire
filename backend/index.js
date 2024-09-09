@@ -4,7 +4,6 @@ import routers from '@routers/index.js';
 import cors from "cors"
 import dotenv from 'dotenv';
 
-
 dotenv.config();
 
 const app = express();
@@ -39,16 +38,13 @@ app.get('*', (req, res) => {
 
 
 app.use((err, req, res, next) => {
-    // Set the status code (default to 500 if not set)
     res.status(err.status || 500);
 
     console.log(err);
 
-    // Send error response
     res.json({
         message: err.message,
-        // Only include stack trace in development
-        ...(process.env.BUN_ENV === 'development' && { stack: err.stack })
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 
 });

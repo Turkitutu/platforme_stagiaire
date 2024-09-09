@@ -25,7 +25,7 @@ const studentDemandSchema = new mongoose.Schema(
         },
         cin: {
             type: String,
-            required: true,
+            required: false,
         },
         passport: {
             type: String,
@@ -88,7 +88,7 @@ const studentDemandSchema = new mongoose.Schema(
         },
         attachments: {
             type: [String],
-            required: false,
+            required: true,
         }
     },
     {

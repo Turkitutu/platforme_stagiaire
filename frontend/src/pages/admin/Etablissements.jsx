@@ -35,7 +35,6 @@ const Etablissements = () => {
     const [form] = Form.useForm();
 
     const handleSubmit = (values) => {
-        console.log(values);
         setLoadingSubmit(true);
 
         if (!selectedEtablissement) {
