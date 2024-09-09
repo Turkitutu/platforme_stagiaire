@@ -10,6 +10,9 @@ import MainLayout from "./layouts/main";
 
 import DashboardLayout from "./pages/admin/DashboardLayout";
 import Etablissements from "./pages/admin/Etablissements";
+import DemandesTable from "./pages/admin/DemandesTable";
+import Encadrants from "./pages/admin/Encadrants";
+
 import Services from "./pages/admin/Services";
 import { ConfigProvider } from "antd";
 
@@ -37,15 +40,15 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <h1>dashboard</h1>,
+        element: <DemandesTable />,
       },
       {
         path: "demandes",
-        element: <h1>demandes</h1>,
+        element: <DemandesTable />,
       },
       {
         path: "encadrants",
-        element: <h1>encadrants</h1>,
+        element: <Encadrants />,
       },
       {
         path: "stagaires",

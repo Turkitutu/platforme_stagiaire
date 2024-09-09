@@ -50,7 +50,7 @@ const sidebarData = [
 
 
 const DashboardLayout = () => {
-    const [breadcrumbItems, setBreadcrumbItems] = useState([]);
+    const [breadcrumbItems, setBreadcrumbItems] = useState(["Dashboard", "Demandes de stage"]);
     const [selectedKeys, setSelectedKeys] = useState(['demandes']);
     const navigate = useNavigate();
     const location = useLocation();
