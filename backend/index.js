@@ -20,6 +20,9 @@ app.use(cors(
 
 app.use('/', routers);
 
+// upload image
+
+app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {
     res.on('finish', () => {

@@ -1,10 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Form, Input, Modal, notification, Select, Space, Table, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusCircleFilled, SearchOutlined } from '@ant-design/icons';
+import { Button, Descriptions, Divider, Form, Input, Modal, notification, Select, Space, Table, Tag, Upload } from 'antd';
+import { EditOutlined, DeleteOutlined, SearchOutlined, PaperClipOutlined } from '@ant-design/icons';
 import api from '@/services/api';
+import moment from 'moment';
 
+const stageTypes = {
+    stage_initiation: 'Stage d\'initiation',
+    stage_perfectionnement: 'Stage de perfectionnement',
+    stage_pfe: 'Stage de fin d’étude (PFE)',
+    stage_ouvrier: 'Stage ouvrier',
+    stage_technicien: 'Stage technicien',
+    stage_ingenieur: 'Stage ingénieur',
+    stage_pratique: 'Stage pratique',
+    alternance: 'Alternance',
+};
 
-const Etablissements = () => {
+const stageTypesColors = {
+    stage_initiation: 'orange',
+    stage_perfectionnement: 'green',
+    stage_pfe: 'blue',
+    stage_ouvrier: 'purple',
+    stage_technicien: 'red',
+    stage_ingenieur: 'cyan',
+    stage_pratique: 'geekblue',
+    alternance: 'magenta',
+}
+
+const StageDemandes = () => {
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
@@ -13,10 +35,31 @@ const Etablissements = () => {
     const [searchedColumn, setSearchedColumn] = useState('');
     const searchInput = useRef(null);
 
-    const getEtablissements = async () => {
+    const getStageDemandes = async () => {
         try {
-            const response = await api.get('/etablissement');
-            setData(response.data);
+            const response = await api.get('/demande_stage');
+            const data = response.data.map((item) => {
+                return {
+                    ...item,
+                    identity: String(item.cin) || String(item.passport),
+                    fullname: `${item.first_name} ${item.last_name}`,
+                    type_stageLabel: stageTypes[item.type_stage],
+                    type_stageColor: stageTypesColors[item.type_stage],
+                    attachments: item.attachments.map((path) => {
+                        const completeFileName = path.split('\\').pop();
+                        const arrayFilename = completeFileName.split('-');
+                        arrayFilename.shift();
+                        const filename = arrayFilename.join('-');
+                        return {
+                            uid: path,
+                            name: filename,
+                            status: 'done',
+                            url: `${import.meta.env.VITE_BASE_URL}/${path}`,
+                        };
+                    }),
+                };
+            });
+            setData(data);
             setLoading(false);
         } catch (error) {
             console.error(error);
@@ -24,66 +67,15 @@ const Etablissements = () => {
     };
 
     useEffect(() => {
-        getEtablissements();
+        getStageDemandes();
     }, []);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedEtablissement, setSelectedEtablissement] = useState(null);
+    const [selectedDemande, setSelectedDemande] = useState(null);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
 
     const [alert, contextHolder] = notification.useNotification();
     const [form] = Form.useForm();
-
-    const handleSubmit = (values) => {
-        setLoadingSubmit(true);
-
-        if (!selectedEtablissement) {
-            api.post('/etablissement', values)
-                .then(response => {
-                    setData([...data, response.data]);
-                    alert.success({
-                        message: 'Niveau établissement',
-                        description: 'Votre établissement a été ajouté avec succès',
-                    });
-                    setIsModalOpen(false);
-                })
-                .catch(error => {
-                    console.error(error);
-                    alert.error({
-                        message: 'Erreur',
-                        description:
-                            'Erreur lors de l\'ajout de l\'établissement',
-                    });
-                })
-                .finally(() => {
-                    setLoadingSubmit(false);
-                });
-        } else {
-            api.put(`/etablissement/${selectedEtablissement._id}`, values)
-                .then(response => {
-                    const index = data.findIndex(item => item._id === response.data._id);
-                    const newData = [...data];
-                    newData[index] = response.data;
-                    setData(newData);
-                    alert.success({
-                        message: 'Établissement modifié',
-                        description: 'Votre établissement a été modifié avec succès',
-                    });
-                    setSelectedEtablissement(null);
-                    setLoadingSubmit(false);
-                    setIsModalOpen(false);
-                })
-                .catch(error => {
-                    console.error(error);
-                    alert.error({
-                        message: 'Erreur',
-                        description:
-                            'Erreur lors de la nom de l\'établissement',
-                    });
-                    setLoadingSubmit(false);
-                })
-        }
-    };
 
     const confirmDelete = (record) => {
         Modal.confirm({
@@ -116,7 +108,7 @@ const Etablissements = () => {
     };
 
     const handleEdit = (record) => {
-        setSelectedEtablissement(record);
+        setSelectedDemande(record);
         form.setFieldValue('name', record.name);
         form.setFieldValue('category', record.category);
         setIsModalOpen(true);
@@ -125,12 +117,12 @@ const Etablissements = () => {
     const handleAdd = () => {
         form.setFieldValue('name', null);
         form.setFieldValue('category', null);
-        setSelectedEtablissement(null);
+        setSelectedDemande(null);
         setIsModalOpen(true);
     };
 
     const handleCancel = () => {
-        setSelectedEtablissement(null);
+        setSelectedDemande(null);
         setIsModalOpen(false);
     };
 
@@ -223,33 +215,40 @@ const Etablissements = () => {
 
     const columns = [
         {
-            title: 'Les établissement',
-            dataIndex: 'name',
-            key: 'name',
-            width: '70%',
-            ...getColumnSearchProps('name', 'Rechercher un établissement'),
-            sorter: (a, b) => a.name.length - b.name.length,
+            title: 'CIN/Passport',
+            dataIndex: 'identity',
+            key: 'identity',
+            width: '20%',
+            ...getColumnSearchProps('identity', 'Rechercher par CIN/Passport'),
             render: (text) => <a>{text}</a>,
         },
         {
-            title: 'Catégorie',
-            dataIndex: 'category',
-            key: 'category',
-            width: '17%',
+            title: 'Nom et prénom',
+            dataIndex: 'fullname',
+            key: 'fullname',
+            width: '20%',
+            onFilter: (value, record) => record.fullname.indexOf(value) === 0,
+            ...getColumnSearchProps('fullname', 'Rechercher par nom et prénom'),
+        },
+        {
+            title: 'Type de stage',
+            dataIndex: 'type_stageLabel',
+            key: 'type_stageLabel',
+            width: '20%',
+            onFilter: (value, record) => record.type_stageLabel.indexOf(value) === 0,
             showSorterTooltip: { target: 'full-header' },
-            filters: [
-                {
-                    text: 'Établissements',
-                    value: 'etablissement',
-                },
-                {
-                    text: 'Centres de formation',
-                    value: 'center',
-                },
-            ],
-            onFilter: (value, record) => record.category.indexOf(value) === 0,
-            sorter: (a, b) => a.category.length - b.category.length,
-            render: (text, record) => <>{record.category == 'etablissement' ? <Tag color="cyan">Établissement</Tag> : <Tag color="gold">Centre de formation</Tag>}</>,
+            filters: Object.keys(stageTypes).map((key) => ({ text: stageTypes[key], value: key })),
+            sorter: (a, b) => a.type_stageLabel.length - b.type_stageLabel.length,
+            render: (text, record) => <Tag color={record.type_stageColor}>{text}</Tag>
+        },
+        {
+            title: 'Durée (mois)',
+            dataIndex: 'stage_duration',
+            key: 'stage_duration',
+            width: '14%',
+            onFilter: (value, record) => record.stage_duration.indexOf(value) === 0,
+            sorter: (a, b) => a.stage_duration.length - b.stage_duration.length,
+            render: (text) => <div className='flex justify-center'><Tag>{text} mois</Tag></div>
         },
         {
             title: 'Action',
@@ -269,7 +268,7 @@ const Etablissements = () => {
 
     return <>
         <Modal
-            title={selectedEtablissement ? 'Modifier l\'établissement' : 'Ajouter un établissement'}
+            title={selectedDemande ? 'Modifier l\'établissement' : 'Ajouter un établissement'}
             open={isModalOpen}
             onCancel={handleCancel}
             footer={[
@@ -277,7 +276,7 @@ const Etablissements = () => {
                     Annuler
                 </Button>,
                 <Button key="submit" type="primary" loading={loadingSubmit} onClick={() => form.submit()}>
-                    {selectedEtablissement ? 'Modifier' : 'Ajouter'}
+                    {selectedDemande ? 'Modifier' : 'Ajouter'}
                 </Button>,
             ]}
         >
@@ -285,7 +284,7 @@ const Etablissements = () => {
                 form={form}
                 layout="vertical"
                 onFinish={onFinish}
-                initialValues={{ name: selectedEtablissement ? selectedEtablissement.name : '' }}
+                initialValues={{ name: selectedDemande ? selectedDemande.name : '' }}
             >
                 <Form.Item
                     label="Nom de l'établissement"
@@ -317,12 +316,132 @@ const Etablissements = () => {
                 </Form.Item>
             </Form>
         </Modal>
-        <Button type="primary" onClick={handleAdd} className='mb-4' icon={<PlusCircleFilled />}>
-            Ajouter un établissement
-        </Button>
-        <Table loading={loading} columns={columns} dataSource={data} />
+        <h1 className="text-lg font-semibold mb-5">Les demandes</h1>
+        <Table
+            loading={loading}
+            columns={columns}
+            dataSource={data}
+            rowClassName="hover:cursor-pointer"
+            expandable={{
+                expandRowByClick: true,
+                expandedRowRender: (record) => <div style={{ margin: 0 }}>
+                    <Descriptions title="Fiche de candidature" layout="horizontal" items={[
+                        {
+                            key: '1',
+                            label: 'Nom et prénom',
+                            children: record.fullname,
+                        },
+                        {
+                            key: '2',
+                            label: 'Date de naissance',
+                            children: <Tag>{moment(record.date_naissance).format('DD/MM/YYYY')}</Tag>,
+                        },
+                        {
+                            key: '3',
+                            label: 'Sexe',
+                            children: record.gender == 'male' ? <Tag color="blue">Homme</Tag> : <Tag color="pink">Femme</Tag>,
+                        },
+                        {
+                            key: '4',
+                            label: 'Nationalité',
+                            children: record.nationality,
+                        },
+                        {
+                            key: '5',
+                            label: 'Adresse',
+                            span: 2,
+                            children: record.address,
+                        },
+                        {
+                            key: '6',
+                            label: record.cin ? 'CIN' : 'Passport',
+                            children: <Tag color="green">{record.identity}</Tag>,
+                        },
+                        {
+                            key: '7',
+                            label: 'Téléphone',
+                            children: <Tag>{record.phone}</Tag>,
+                        },
+                        {
+                            key: '8',
+                            label: 'Email',
+                            children: <Tag>{record.email}</Tag>,
+                        }
+                    ]} />
+                    <Divider></Divider>
+                    <Descriptions layout="horizontal" items={[
+                        {
+                            key: '1',
+                            span: 3,
+                            label: record.etablissement ? 'Etablissement' : 'Etablissement (autre)',
+                            children: record.etablissement ? record.etablissement.name : record.autre_etablissement,
+                        },
+                        {
+                            key: '2',
+                            label: "Spécialité",
+                            children: record.specialty,
+                        },
+                        {
+                            key: '2',
+                            label: "Niveau",
+                            children: record.niveau,
+                        },
+                        {
+                            key: '3',
+                            label: "Diplôme",
+                            children: record.diplome,
+                        },
+                        {
+                            key: '4',
+                            label: "Type de stage",
+                            children: <Tag color={record.type_stageColor}>{record.type_stageLabel}</Tag>,
+                        },
+                        {
+                            key: '5',
+                            label: "Durée (mois)",
+                            span: 2,
+                            children: <Tag>{record.stage_duration} mois</Tag>,
+                        },
+                        record.type_stage == "stage_pfe" ? {
+                            key: '6',
+                            label: "Proposition de sujet",
+                            span: 3,
+                            children: <Tag className="text-wrap">Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus tempore magni in suscipit porro obcaecati consectetur consequatur voluptatum dolores, sit sint repellendus omnis ullam libero culpa nihil minima corporis autem.</Tag>
+                        } : { key: '6', span: 3, },
+                        {
+                            key: '7',
+                            label: "Pièce Jointe",
+                            span: 3,
+                            children:
+                                <Upload
+                                    showUploadList={{
+                                        showRemoveIcon: false,
+                                    }}
+                                    defaultFileList={record.attachments}
+                                    itemRender={(originNode, file) => (
+                                        <div className="file-item mb-1">
+                                            <a
+                                                href={file.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="file-link hover:bg-slate-400"
+                                            >
+                                                <span className='flex items-center text-gray-700 hover:text-blue-500 hover:bg-blue-50'>
+                                                    <PaperClipOutlined className='me-2' />{file.name}
+                                                </span>
+                                            </a>
+                                        </div>
+                                    )}
+                                >
+                                </Upload>
+                        }
+                    ]} />
+                </div >,
+                rowExpandable: (record) => record.name !== 'Not Expandable',
+            }}
+        />
         {contextHolder}
     </>
 };
 
-export default Etablissements;
+export default StageDemandes;

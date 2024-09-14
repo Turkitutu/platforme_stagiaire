@@ -69,10 +69,19 @@ const create = async (req, res) => {
 
         const newStudentDemand = new StudentDemand(studentDemand);
         await newStudentDemand.save();
-        res.status(201).json({ message: "Student demand created successfully" });
+        res.status(201).json({ message: "Student demande created successfully" });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 }
 
-export default { create };
+const getAll = async (req, res) => {
+    try {
+        const studentDemands = await StudentDemand.find().populate("etablissement");
+        res.status(200).json(studentDemands);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+}
+
+export default { create, getAll };
