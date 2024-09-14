@@ -72,7 +72,6 @@ const StageDemandes = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDemande, setSelectedDemande] = useState(null);
-    const [loadingSubmit, setLoadingSubmit] = useState(false);
 
     const [alert, contextHolder] = notification.useNotification();
     const [form] = Form.useForm();
@@ -111,13 +110,6 @@ const StageDemandes = () => {
         setSelectedDemande(record);
         form.setFieldValue('name', record.name);
         form.setFieldValue('category', record.category);
-        setIsModalOpen(true);
-    };
-
-    const handleAdd = () => {
-        form.setFieldValue('name', null);
-        form.setFieldValue('category', null);
-        setSelectedDemande(null);
         setIsModalOpen(true);
     };
 
