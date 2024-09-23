@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Descriptions, Divider, Form, Input, Modal, notification, Select, Space, Table, Tag, Upload } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { SearchOutlined, PaperClipOutlined, CheckOutlined, CloseOutlined, PlusCircleTwoTone, MinusCircleTwoTone } from '@ant-design/icons';
 import api from '@/services/api';
 import moment from 'moment';
 
@@ -76,18 +76,19 @@ const StageDemandes = () => {
     const [alert, contextHolder] = notification.useNotification();
     const [form] = Form.useForm();
 
-    const confirmDelete = (record) => {
+    const confirmReject = (record) => {
         Modal.confirm({
-            title: 'Supprimer l\'établissement',
-            content: 'Êtes-vous sûr de vouloir supprimer cet établissement ?',
-            okText: 'Supprimer',
+            title: `Rejeter la demande de ${record.fullname}`,
+            content: <>Voulez-vous vraiment rejeter la demande de <b>{record.fullname}</b> ?</>,
+            okText: 'Rejeter',
+            width: 500,
             okType: 'danger',
             cancelText: 'Annuler',
-            onOk: () => handleDelete(record),
+            onOk: () => handleReject(record),
         });
     }
 
-    const handleDelete = (record) => {
+    const handleReject = (record) => {
         api.delete(`/etablissement/${record._id}`)
             .then(() => {
                 setData(data.filter(item => item._id !== record._id));
@@ -106,7 +107,7 @@ const StageDemandes = () => {
             });
     };
 
-    const handleEdit = (record) => {
+    const handleAccept = (record) => {
         setSelectedDemande(record);
         form.setFieldValue('name', record.name);
         form.setFieldValue('category', record.category);
@@ -246,28 +247,43 @@ const StageDemandes = () => {
             title: 'Action',
             key: 'action',
             render: (_, record) => (
-                <Space size="middle">
-                    <Button type="primary" onClick={() => { handleEdit(record) }} icon={<EditOutlined />} shape="circle">
-
+                <Space size="middle" >
+                    <Button
+                        className='p-3 rounded-md text-lime-600'
+                        onClick={() => { handleAccept(record) }}
+                        icon={<CheckOutlined />}
+                        size="small"
+                        style={{ borderColor: '#52c41a' }} // Ant Design success color
+                    >
+                        Accepter
                     </Button>
-                    <Button type="primary" onClick={() => { confirmDelete(record) }} danger icon={<DeleteOutlined />} shape="circle">
-
+                    <Button
+                        onClick={() => { confirmReject(record) }}
+                        className='p-3 rounded-md'
+                        icon={<CloseOutlined />}
+                        color="default"
+                        variant="dashed"
+                        size="small"
+                        danger
+                    >
+                        Rejeter
                     </Button>
-                </Space>
+
+                </Space >
             ),
         },
     ];
 
     return <>
         <Modal
-            title={selectedDemande ? 'Modifier l\'établissement' : 'Ajouter un établissement'}
+            title={<>Accepter la demande de <span className='text-lime-600'>{selectedDemande ? selectedDemande.fullname : ''}</span></>}
             open={isModalOpen}
             onCancel={handleCancel}
             footer={[
                 <Button key="cancel" onClick={handleCancel}>
                     Annuler
                 </Button>,
-                <Button key="submit" type="primary" loading={loadingSubmit} onClick={() => form.submit()}>
+                <Button key="submit" type="primary" onClick={() => form.submit()}>
                     {selectedDemande ? 'Modifier' : 'Ajouter'}
                 </Button>,
             ]}
@@ -313,9 +329,20 @@ const StageDemandes = () => {
             loading={loading}
             columns={columns}
             dataSource={data}
-            rowClassName="hover:cursor-pointer"
             expandable={{
-                expandRowByClick: true,
+                expandRowByClick: false,
+                rowExpandable: (record) => record.name !== 'Not Expandable',
+                expandIcon: ({ expanded, onExpand, record }) => {
+                    return expanded ? (
+                        <span className="text-red-600">
+                            <MinusCircleTwoTone twoToneColor="#f87171" className="text-lg/3" onClick={e => onExpand(record, e)} />
+                        </span>
+                    ) : (
+                        <span className="text-red-600">
+                            <PlusCircleTwoTone className="text-lg/3" onClick={e => onExpand(record, e)} />
+                        </span>
+                    );
+                },
                 expandedRowRender: (record) => <div style={{ margin: 0 }}>
                     <Descriptions title="Fiche de candidature" layout="horizontal" items={[
                         {
@@ -410,7 +437,7 @@ const StageDemandes = () => {
                                         showRemoveIcon: false,
                                     }}
                                     defaultFileList={record.attachments}
-                                    itemRender={(originNode, file) => (
+                                    itemRender={(_, file) => (
                                         <div className="file-item mb-1">
                                             <a
                                                 href={file.url}
@@ -429,7 +456,6 @@ const StageDemandes = () => {
                         }
                     ]} />
                 </div >,
-                rowExpandable: (record) => record.name !== 'Not Expandable',
             }}
         />
         {contextHolder}
