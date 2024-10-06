@@ -58,7 +58,7 @@ const globalSidebarData = [
             },
             {
                 key: 'session',
-                label: `Gestion de la Session`,
+                label: `Gestion Session`,
                 path: '/dashboard/session',
             }
         ]
