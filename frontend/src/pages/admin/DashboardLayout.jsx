@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { LaptopOutlined, UserOutlined, SettingOutlined } from '@ant-design/icons';
+import { UserOutlined, SettingOutlined } from '@ant-design/icons';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import { getUser } from '@/services/storage';
 
-const { Header, Content, Sider } = Layout;
+const { Content, Sider } = Layout;
+
+
+const AccessVerifier = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const user = getUser();
+
+        if (!user) {
+            navigate("/login");
+        }
+    }, []);
+
+    return null;
+}
+
 
 const sidebarData = [
     {
@@ -15,17 +32,17 @@ const sidebarData = [
             {
                 key: 'demandes',
                 label: `Demandes de stage`,
-                path: '/dashboard/demandes'
+                path: '/dashboard/demandes',
+            },
+            {
+                key: 'stagaires',
+                label: `Stagaires`,
+                path: '/dashboard/stagaires',
             },
             {
                 key: 'encadrants',
                 label: `Encadrants`,
                 path: '/dashboard/encadrants'
-            },
-            {
-                key: 'stagaires',
-                label: `Stagaires`,
-                path: '/dashboard/stagaires'
             }
         ]
     },
@@ -34,15 +51,16 @@ const sidebarData = [
         icon: React.createElement(SettingOutlined),
         label: `Paramètres`,
         children: [
+
             {
                 key: 'services',
                 label: `Les services`,
-                path: '/dashboard/services'
+                path: '/dashboard/services',
             },
             {
                 key: 'etablissements',
                 label: `Les établissements`,
-                path: '/dashboard/etablissements'
+                path: '/dashboard/etablissements',
             }
         ]
     }
@@ -54,6 +72,9 @@ const DashboardLayout = () => {
     const [selectedKeys, setSelectedKeys] = useState(['demandes']);
     const navigate = useNavigate();
     const location = useLocation();
+
+    const user = getUser();
+
 
 
     useEffect(() => {
@@ -82,42 +103,46 @@ const DashboardLayout = () => {
 
     return (
         <>
-            <Navbar fixed={false} />
-            <div className="min-h-screen bg-gray-100">
-                <Layout style={{ minHeight: '100vh' }}>
-                    <Layout>
-                        <Sider width={200} style={{ background: colorBgContainer }}>
-                            <Menu
-                                mode="inline"
-                                defaultSelectedKeys={selectedKeys}
-                                key={selectedKeys[0]}
-                                defaultOpenKeys={['dashboard', 'parameters']}
-                                style={{ height: '100%', borderRight: 0 }}
-                                items={sidebarData}
-                                onClick={handleMenuChange}
-                            />
-                        </Sider>
-                        <Layout style={{ padding: '0 24px 24px' }}>
-                            <Breadcrumb style={{ margin: '16px 0' }}>
-                                {breadcrumbItems.map((item, index) => (
-                                    <Breadcrumb.Item key={index}>{item}</Breadcrumb.Item>
-                                ))}
-                            </Breadcrumb>
-                            <Content
-                                style={{
-                                    padding: 24,
-                                    margin: 0,
-                                    minHeight: 280,
-                                    background: colorBgContainer,
-                                    borderRadius: borderRadiusLG,
-                                }}
-                            >
-                                <Outlet />
-                            </Content>
+            <AccessVerifier />
+            {user && (<>
+                <Navbar fixed={false} />
+                <div className="min-h-screen bg-gray-100">
+                    <Layout style={{ minHeight: '100vh' }}>
+                        <Layout>
+                            <Sider width={200} style={{ background: colorBgContainer }}>
+                                <Menu
+                                    mode="inline"
+                                    defaultSelectedKeys={selectedKeys}
+                                    key={selectedKeys[0]}
+                                    defaultOpenKeys={['dashboard', 'parameters']}
+                                    style={{ height: '100%', borderRight: 0 }}
+                                    items={sidebarData}
+                                    onClick={handleMenuChange}
+                                />
+                            </Sider>
+                            <Layout style={{ padding: '0 24px 24px' }}>
+                                <Breadcrumb style={{ margin: '16px 0' }}>
+                                    {breadcrumbItems.map((item, index) => (
+                                        <Breadcrumb.Item key={index}>{item}</Breadcrumb.Item>
+                                    ))}
+                                </Breadcrumb>
+                                <Content
+                                    style={{
+                                        padding: 24,
+                                        margin: 0,
+                                        minHeight: 280,
+                                        background: colorBgContainer,
+                                        borderRadius: borderRadiusLG,
+                                    }}
+                                >
+                                    <Outlet />
+                                </Content>
+                            </Layout>
                         </Layout>
                     </Layout>
-                </Layout>
-            </div>
+                </div></>
+            )
+            }
         </>
     );
 };

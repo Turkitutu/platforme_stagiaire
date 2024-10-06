@@ -26,6 +26,10 @@ const MainPage = () => {
         navigate('/demande_de_stage');
     }
 
+    const handleCINClick = () => {
+        navigate('/verify');
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center">
             <div className="flex-1 flex flex-col justify-center items-center text-center bg-cover bg-center p-8"
@@ -39,7 +43,7 @@ const MainPage = () => {
                         <Button onClick={handleSubmitClick} type="primary" size="large" className="bg-green-500 hover:bg-green-600 text-white rounded-lg">
                             Soumettre une demande de stage <ArrowRightOutlined />
                         </Button>
-                        <Button size="large" className="bg-white text-blue-600 hover:bg-blue-50 border-blue-600 rounded-lg">
+                        <Button onClick={handleCINClick} size="large" className="bg-white text-blue-600 hover:bg-blue-50 border-blue-600 rounded-lg">
                             Connexion avec CIN <LoginOutlined />
                         </Button>
                     </div>

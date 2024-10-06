@@ -12,12 +12,16 @@ import DashboardLayout from "./pages/admin/DashboardLayout";
 import Etablissements from "./pages/admin/Etablissements";
 import DemandesTable from "./pages/admin/DemandesTable";
 import Encadrants from "./pages/admin/Encadrants";
+import Stagaires from "./pages/admin/Stagaires";
+import Login from "./pages/Login";
 
 import Services from "./pages/admin/Services";
 import { ConfigProvider } from "antd";
 
 import frFR from 'antd/locale/fr_FR';
 import { useState } from "react";
+import Logout from "./pages/Logout";
+import VerifyCIN from "./pages/VerifyCIN";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +35,14 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: <Home />,
+      },
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "verify",
+        element: <VerifyCIN />,
       }
     ]
   },
@@ -52,7 +64,7 @@ const router = createBrowserRouter([
       },
       {
         path: "stagaires",
-        element: <h1>stagaires</h1>,
+        element: <Stagaires />,
       },
       {
         path: "services",
@@ -64,6 +76,10 @@ const router = createBrowserRouter([
       },
     ]
   },
+  {
+    path: "logout",
+    element: <Logout />,
+  }
 ]);
 
 

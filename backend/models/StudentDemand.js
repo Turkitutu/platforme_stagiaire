@@ -89,7 +89,13 @@ const studentDemandSchema = new mongoose.Schema(
         attachments: {
             type: [String],
             required: true,
-        }
+        },
+        status: {
+            type: String,
+            required: true,
+            enum: ["active", "accepted", "rejected"],
+            default: "active",
+        },
     },
     {
         timestamps: true,  // Adds createdAt and updatedAt timestamps

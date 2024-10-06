@@ -1,16 +1,23 @@
 import { Button, Dropdown, Menu } from "antd";
 import { useEffect, useState } from "react";
 import 'antd/dist/reset.css';
-import { DownOutlined, HomeOutlined, MailOutlined, UserOutlined, BellOutlined } from '@ant-design/icons';
+import { DownOutlined, HomeOutlined, UserOutlined, LoginOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
 import logo from '../assets/logo.jpg';
+import { Link, useNavigate } from "react-router-dom";
 
+import { getToken } from '../services/storage';
 
 const Navbar = ({ fixed } = { fixed: false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
 
   const handleScroll = () => {
     setIsScrolled(window.scrollY > 50);
   };
+
+  const navigateToLogin = () => {
+    navigate('/login');
+  }
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -20,16 +27,16 @@ const Navbar = ({ fixed } = { fixed: false }) => {
   const menu = (
     <Menu>
       <Menu.Item key="0" icon={<HomeOutlined />}>
-        <a href="#">Accueil</a>
+        <Link to="/">Accueil</Link>
       </Menu.Item>
       <Menu.Item key="1" icon={<UserOutlined />}>
-        <a href="#">Demande de Stage</a>
+        <Link to="/demande_de_stage">Demande de Stage</Link>
       </Menu.Item>
-      <Menu.Item key="2" icon={<MailOutlined />}>
-        <a href="#">Instructions</a>
+      <Menu.Item key="3" icon={<SettingOutlined />}>
+        <Link to="/dashboard">Dashboard</Link>
       </Menu.Item>
-      <Menu.Item key="3" icon={<UserOutlined />}>
-        <a href="#">Contact</a>
+      <Menu.Item key="4" icon={<LogoutOutlined />}>
+        <Link to="/logout">Logout</Link>
       </Menu.Item>
     </Menu>
   );
@@ -46,24 +53,38 @@ const Navbar = ({ fixed } = { fixed: false }) => {
 
       <div className="hidden md:flex space-x-6 items-center">
 
-        <a href="#" className="text-white hover:text-blue-300 transition-colors duration-200">Accueil</a>
-        <a href="#" className="text-white hover:text-blue-300 transition-colors duration-200">Demande de Stage</a>
-        <a href="#" className="text-white hover:text-blue-300 transition-colors duration-200">Contact</a>
+        <Link to="/" className="text-white hover:text-blue-300 transition-colors duration-200">Accueil</Link>
+        <Link to="/demande_de_stage" className="text-white hover:text-blue-300 transition-colors duration-200">Demande de Stage</Link>
 
         {/* <BellOutlined className="text-white hover:text-blue-300 cursor-pointer" /> */}
-        <Dropdown overlay={menu} trigger={['click']}>
-          <Button className="bg-green-500 border-none text-white hover:bg-green-600">
-            Login <DownOutlined />
-          </Button>
-        </Dropdown>
+
+        {getToken() ? (
+
+          <Dropdown overlay={menu} trigger={['click']}>
+            <Button className="bg-white border-none text-blue-400 hover:bg-green-600">
+              Dashboard <DownOutlined />
+            </Button>
+          </Dropdown>)
+          :
+          (<Button onClick={navigateToLogin} className="text-white bg-transparent hover:bg-transparent border-white border-1 hover:border-white">
+            Administration <LoginOutlined />
+          </Button>)
+        }
       </div>
 
       <div className="md:hidden">
-        <Dropdown overlay={menu} trigger={['click']}>
-          <Button className="bg-white border-none text-blue-400 hover:text-blue-300">
-            Menu <DownOutlined />
-          </Button>
-        </Dropdown>
+        {getToken() ? (
+
+          <Dropdown overlay={menu} trigger={['click']}>
+            <Button className="bg-white border-none text-blue-400 hover:bg-green-600">
+              Dashboard <DownOutlined />
+            </Button>
+          </Dropdown>)
+          :
+          (<Button type="link" onClick={navigateToLogin} className="text-white bg-transparent hover:bg-transparent border-white border-1 hover:border-white">
+            Administration <LoginOutlined />
+          </Button>)
+        }
       </div>
     </header>
   );

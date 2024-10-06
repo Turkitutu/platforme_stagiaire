@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
-// import User from '@models/User.js';
+import User from '@models/User.js';
 import bcrypt from 'bcrypt';
 
 
@@ -72,73 +72,59 @@ const loginSchema = Joi.object({
 //     }
 // };
 
-// const login = async (req, res, next) => {
-//     try {
-//         const { email, password } = await loginSchema.validateAsync(req.body);
+const login = async (req, res, next) => {
+    try {
+        const { email, password } = await loginSchema.validateAsync(req.body);
 
-//         const user = await User.findOne({ email: email });
+        const user = await User.findOne({ email: email });
 
-//         if (!user) {
-//             return res.status(404).json({
-//                 status: 404,
-//                 error: 'Not Found',
-//                 messageCode: 'account_not_found',
-//                 message: 'Account not found',
-//             });
-//         }
+        if (!user) {
+            return res.status(404).json({
+                status: 404,
+                error: 'Not Found',
+                messageCode: 'account_not_found',
+                message: 'Account not found',
+            });
+        }
 
-//         const isValidPassword = bcrypt.compareSync(password, user.password);
+        const isValidPassword = password == user.password;
 
-//         if (!isValidPassword) {
-//             return res.status(401).json({
-//                 status: 401,
-//                 error: 'Unauthorized',
-//                 messageCode: 'invalid_credentials',
-//                 message: 'Invalid credentials',
-//             });
-//         }
+        if (!isValidPassword) {
+            return res.status(401).json({
+                status: 401,
+                error: 'Unauthorized',
+                messageCode: 'invalid_credentials',
+                message: 'Invalid credentials',
+            });
+        }
 
-//         const token = jwt.sign({
-//             _id: user._id,
-//             name: user.name,
-//             email: user.email,
-//         }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({
+            _id: user._id,
+            isAdmin: user.isAdmin,
+            email: user.email,
+        }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-//         res.status(200).json({
-//             token,
-//             user: {
-//                 _id: user._id,
-//                 name: user.name,
-//                 email: user.email,
-//             }
-//         });
+        res.status(200).json({
+            token,
+            user: {
+                _id: user._id,
+                isAdmin: user.isAdmin,
+                email: user.email,
+            }
+        });
 
-//     } catch (error) {
-//         if (error.isJoi) {
-//             if (error.details.find((detail) => detail.type == "object.xor")) {
-//                 return res.status(400).json({
-//                     status: 400,
-//                     error: 'Bad Request',
-//                     message: "Either username or email is required"
-//                 });
-//             }
-//             return res.status(400).json({
-//                 status: 400,
-//                 error: 'Bad Request',
-//                 message: error.message.replaceAll('\"', ''),
-//             });
-//         }
-//         return res.status(400).json({
-//             status: 400,
-//             error: 'Bad Request',
-//             message: error.message,
-//         });
-//     }
-// }
+    } catch (error) {
+        return res.status(400).json({
+            status: 400,
+            error: 'Bad Request',
+            message: error.message.replaceAll('\"', ''),
+        });
+    }
+}
 
 
 
 export default {
-    signup:() => {},
-    login:() => {},
+    signup: () => { },
+    login,
 };

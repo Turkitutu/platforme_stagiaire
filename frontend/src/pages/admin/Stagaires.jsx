@@ -26,7 +26,7 @@ const stageTypesColors = {
     alternance: 'magenta',
 }
 
-const StageDemandes = () => {
+const Stagaires = () => {
 
     const [loading, setLoading] = useState(true);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -39,18 +39,22 @@ const StageDemandes = () => {
     const [searchedColumn, setSearchedColumn] = useState('');
     const searchInput = useRef(null);
 
-    const getStageDemandes = async () => {
+    const getStagaires = async () => {
         try {
-            const response = await api.get('/demande_stage?status=active');
+            const response = await api.get('/stagaire?status=active');
             const data = response.data.map((item) => {
                 return {
                     ...item,
+                    details: item.studentDemand,
                     key: item._id,
-                    identity: String(item.cin) || String(item.passport),
-                    fullname: `${item.first_name} ${item.last_name}`,
-                    type_stageLabel: stageTypes[item.type_stage],
-                    type_stageColor: stageTypesColors[item.type_stage],
-                    attachments: item.attachments.map((path) => {
+                    identity: String(item.studentDemand.cin) || String(item.studentDemand.passport),
+                    firstname: item.studentDemand.first_name,
+                    lastname: item.studentDemand.last_name,
+                    diplome: item.studentDemand.diplome,
+                    specialty: item.studentDemand.specialty,
+                    type_stageLabel: stageTypes[item.studentDemand.type_stage],
+                    type_stageColor: stageTypesColors[item.studentDemand.type_stage],
+                    attachments: item.studentDemand.attachments.map((path) => {
                         const completeFileName = path.split('\\').pop();
                         const arrayFilename = completeFileName.split('-');
                         arrayFilename.shift();
@@ -97,7 +101,7 @@ const StageDemandes = () => {
 
 
     useEffect(() => {
-        getStageDemandes();
+        getStagaires();
     }, []);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -266,6 +270,24 @@ const StageDemandes = () => {
 
     const columns = [
         {
+            title: 'Nom',
+            dataIndex: 'lastname',
+            key: 'lastname',
+            width: '20%',
+            sorter: (a, b) => a.lastname.length - b.lastname.length,
+            onFilter: (value, record) => record.lastname.indexOf(value) === 0,
+            ...getColumnSearchProps('lastname', 'Rechercher par nom'),
+        },
+        {
+            title: 'Prénom',
+            dataIndex: 'firstname',
+            key: 'firstname',
+            width: '20%',
+            sorter: (a, b) => a.firstname.length - b.firstname.length,
+            onFilter: (value, record) => record.firstname.indexOf(value) === 0,
+            ...getColumnSearchProps('firstname', 'Rechercher par prénom'),
+        },
+        {
             title: 'CIN/Passport',
             dataIndex: 'identity',
             key: 'identity',
@@ -274,59 +296,29 @@ const StageDemandes = () => {
             render: (text) => <a>{text}</a>,
         },
         {
-            title: 'Nom et prénom',
-            dataIndex: 'fullname',
-            key: 'fullname',
+            title: 'Diplôme',
+            dataIndex: 'diplome',
+            key: 'diplome',
             width: '20%',
-            sorter: (a, b) => a.fullname.length - b.fullname.length,
-            onFilter: (value, record) => record.fullname.indexOf(value) === 0,
-            ...getColumnSearchProps('fullname', 'Rechercher par nom et prénom'),
+            sorter: (a, b) => a.diplome.length - b.diplome.length,
+            ...getColumnSearchProps('diplome', 'Rechercher par diplome'),
+            render: (text) => <a>{text}</a>,
         },
         {
-            title: 'Type de stage',
-            dataIndex: 'type_stageLabel',
-            key: 'type_stageLabel',
+            title: 'Spécialité',
+            dataIndex: 'specialty',
+            key: 'specialite',
             width: '20%',
-            onFilter: (value, record) => record.type_stageLabel.indexOf(value) === 0,
-            showSorterTooltip: { target: 'full-header' },
-            filters: Object.keys(stageTypes).map((key) => ({ text: stageTypes[key], value: key })),
-            sorter: (a, b) => a.type_stageLabel.length - b.type_stageLabel.length,
-            render: (text, record) => <Tag color={record.type_stageColor}>{text}</Tag>
-        },
-        {
-            title: 'Durée (mois)',
-            dataIndex: 'stage_duration',
-            key: 'stage_duration',
-            width: '14%',
-            onFilter: (value, record) => record.stage_duration.indexOf(value) === 0,
-            sorter: (a, b) => a.stage_duration - b.stage_duration,
-            render: (text) => <div className='flex justify-center'><Tag>{text} mois</Tag></div>
+            sorter: (a, b) => a.specialty.length - b.specialty.length,
+            ...getColumnSearchProps('specialty', 'Rechercher par specialite'),
+            render: (text) => <a>{text}</a>,
         },
         {
             title: 'Action',
             key: 'action',
             render: (_, record) => (
                 <Space size="middle" >
-                    <Button
-                        className='p-3 rounded-md text-lime-600'
-                        onClick={() => { handleAccept(record) }}
-                        icon={<CheckOutlined />}
-                        size="small"
-                        style={{ borderColor: '#52c41a' }} // Ant Design success color
-                    >
-                        Accepter
-                    </Button>
-                    <Button
-                        onClick={() => { confirmReject(record) }}
-                        className='p-3 rounded-md'
-                        icon={<CloseOutlined />}
-                        color="default"
-                        variant="dashed"
-                        size="small"
-                        danger
-                    >
-                        Rejeter
-                    </Button>
+
 
                 </Space >
             ),
@@ -419,7 +411,7 @@ const StageDemandes = () => {
                 </Form.Item>
             </Form>
         </Modal>
-        <h1 className="text-lg font-semibold mb-5">Les demandes</h1>
+        <h1 className="text-lg font-semibold mb-5">Les stagaires</h1>
         <Table
             loading={loading}
             columns={columns}
@@ -443,28 +435,28 @@ const StageDemandes = () => {
                         {
                             key: '1',
                             label: 'Nom et prénom',
-                            children: record.fullname,
+                            children: record.details.fullname,
                         },
                         {
                             key: '2',
                             label: 'Date de naissance',
-                            children: <Tag>{moment(record.date_naissance).format('DD/MM/YYYY')}</Tag>,
+                            children: <Tag>{moment(record.details.date_naissance).format('DD/MM/YYYY')}</Tag>,
                         },
                         {
                             key: '3',
                             label: 'Sexe',
-                            children: record.gender == 'male' ? <Tag color="blue">Homme</Tag> : <Tag color="pink">Femme</Tag>,
+                            children: record.details.gender == 'male' ? <Tag color="blue">Homme</Tag> : <Tag color="pink">Femme</Tag>,
                         },
                         {
                             key: '4',
                             label: 'Nationalité',
-                            children: record.nationality,
+                            children: record.details.nationality,
                         },
                         {
                             key: '5',
                             label: 'Adresse',
                             span: 2,
-                            children: record.address,
+                            children: record.details.address,
                         },
                         {
                             key: '6',
@@ -474,12 +466,12 @@ const StageDemandes = () => {
                         {
                             key: '7',
                             label: 'Téléphone',
-                            children: <Tag>{record.phone}</Tag>,
+                            children: <Tag>{record.details.phone}</Tag>,
                         },
                         {
                             key: '8',
                             label: 'Email',
-                            children: <Tag>{record.email}</Tag>,
+                            children: <Tag>{record.details.email}</Tag>,
                         }
                     ]} />
                     <Divider></Divider>
@@ -487,23 +479,23 @@ const StageDemandes = () => {
                         {
                             key: '1',
                             span: 3,
-                            label: record.etablissement ? 'Etablissement' : 'Etablissement (autre)',
-                            children: record.etablissement ? record.etablissement.name : record.autre_etablissement,
+                            label: record.details.etablissement ? 'Etablissement' : 'Etablissement (autre)',
+                            children: record.details.etablissement ? record.details.etablissement.name : record.details.autre_etablissement,
                         },
                         {
                             key: '2',
                             label: "Spécialité",
-                            children: record.specialty,
+                            children: record.details.specialty,
                         },
                         {
                             key: '2',
                             label: "Niveau",
-                            children: record.niveau,
+                            children: record.details.niveau,
                         },
                         {
                             key: '3',
                             label: "Diplôme",
-                            children: record.diplome,
+                            children: record.details.diplome,
                         },
                         {
                             key: '4',
@@ -514,9 +506,9 @@ const StageDemandes = () => {
                             key: '5',
                             label: "Durée (mois)",
                             span: 2,
-                            children: <Tag>{record.stage_duration} mois</Tag>,
+                            children: <Tag>{record.details.stage_duration} mois</Tag>,
                         },
-                        record.type_stage == "stage_pfe" ? {
+                        record.details.type_stage == "stage_pfe" ? {
                             key: '6',
                             label: "Proposition de sujet",
                             span: 3,
@@ -531,7 +523,7 @@ const StageDemandes = () => {
                                     showUploadList={{
                                         showRemoveIcon: false,
                                     }}
-                                    defaultFileList={record.attachments}
+                                    defaultFileList={record.details.attachments}
                                     itemRender={(_, file) => (
                                         <div className="file-item mb-1">
                                             <a
@@ -557,4 +549,4 @@ const StageDemandes = () => {
     </>
 };
 
-export default StageDemandes;
+export default Stagaires;

@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import encadrantController from '@controllers/encadrantController.js';
+import auth from '@middlewares/auth.js';
 
 const router = Router();
 
-router.post('/', encadrantController.create);
-router.get('/', encadrantController.getAll);
-router.get('/:id', encadrantController.getById);
-router.delete('/:id', encadrantController.deleteById);
-router.put('/:id', encadrantController.updateById);
+router.post('/', auth, encadrantController.create);
+router.delete('/:id', auth, encadrantController.deleteById);
+router.put('/:id', auth, encadrantController.updateById);
 
+router.get('/', auth, encadrantController.getAll);
+router.get('/:id', auth, encadrantController.getById);
 
 export default router;
