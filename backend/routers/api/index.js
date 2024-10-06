@@ -5,6 +5,8 @@ import serviceRoutes from './serviceRoutes.js';
 import demandeStageRoutes from './demandeStageRoutes.js';
 import encadrantRoutes from './encadrantRoutes.js';
 import stagaireRoutes from './stagaireRoutes.js';
+import userRoutes from './userRoutes.js';
+import auth from '@middlewares/auth.js';
 
 
 const router = Router();
@@ -17,6 +19,9 @@ router.use('/demande_stage', demandeStageRoutes);
 router.use('/etablissement', etablissementRoutes);
 router.use('/service', serviceRoutes);
 router.use('/stagaire', stagaireRoutes);
+
+
+router.use('/user', auth, userRoutes);
 
 
 export default router;

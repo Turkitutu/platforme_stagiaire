@@ -5,10 +5,11 @@ import { DownOutlined, HomeOutlined, UserOutlined, LoginOutlined, SettingOutline
 import logo from '../assets/logo.jpg';
 import { Link, useNavigate } from "react-router-dom";
 
-import { getToken } from '../services/storage';
+import { getToken, getUser } from '../services/storage';
 
 const Navbar = ({ fixed } = { fixed: false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
 
   const handleScroll = () => {
@@ -22,6 +23,11 @@ const Navbar = ({ fixed } = { fixed: false }) => {
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (getUser())
+      setUsername(getUser().name);
   }, []);
 
   const menu = (
@@ -62,7 +68,7 @@ const Navbar = ({ fixed } = { fixed: false }) => {
 
           <Dropdown overlay={menu} trigger={['click']}>
             <Button className="bg-white border-none text-blue-400 hover:bg-green-600">
-              Dashboard <DownOutlined />
+              {username} <DownOutlined />
             </Button>
           </Dropdown>)
           :
@@ -77,7 +83,7 @@ const Navbar = ({ fixed } = { fixed: false }) => {
 
           <Dropdown overlay={menu} trigger={['click']}>
             <Button className="bg-white border-none text-blue-400 hover:bg-green-600">
-              Dashboard <DownOutlined />
+              {username} <DownOutlined />
             </Button>
           </Dropdown>)
           :

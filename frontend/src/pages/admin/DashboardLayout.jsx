@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UserOutlined, SettingOutlined } from '@ant-design/icons';
+import { UserOutlined, SettingOutlined, PoweroffOutlined } from '@ant-design/icons';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
@@ -23,7 +23,7 @@ const AccessVerifier = () => {
 }
 
 
-const sidebarData = [
+const globalSidebarData = [
     {
         key: 'dashboard',
         icon: React.createElement(UserOutlined),
@@ -51,20 +51,32 @@ const sidebarData = [
         icon: React.createElement(SettingOutlined),
         label: `Paramètres`,
         children: [
-
-            {
-                key: 'services',
-                label: `Les services`,
-                path: '/dashboard/services',
-            },
             {
                 key: 'etablissements',
                 label: `Les établissements`,
                 path: '/dashboard/etablissements',
             }
         ]
+    },
+    {
+        key: 'admin',
+        icon: React.createElement(PoweroffOutlined),
+        label: `Admin`,
+        children: [
+            {
+                key: 'services',
+                label: `Les services`,
+                path: '/dashboard/services',
+            },
+            {
+                key: 'users',
+                label: `Les utilisateurs`,
+                path: '/dashboard/users',
+            }
+        ]
     }
 ]
+
 
 
 const DashboardLayout = () => {
@@ -72,12 +84,25 @@ const DashboardLayout = () => {
     const [selectedKeys, setSelectedKeys] = useState(['demandes']);
     const navigate = useNavigate();
     const location = useLocation();
-
     const user = getUser();
 
 
+    const [sidebarData, setSidebarData] = useState(
+        [
+            globalSidebarData[0],
+            globalSidebarData[1]
+        ]);
+
 
     useEffect(() => {
+        const user = getUser();
+        if (user)
+            if (user.isAdmin)
+                setSidebarData([
+                    globalSidebarData[0],
+                    globalSidebarData[1],
+                    globalSidebarData[2]
+                ]);
         sidebarData.map(item => {
             item.children.map(child => {
                 if (child.path === location.pathname) {
@@ -114,7 +139,7 @@ const DashboardLayout = () => {
                                     mode="inline"
                                     defaultSelectedKeys={selectedKeys}
                                     key={selectedKeys[0]}
-                                    defaultOpenKeys={['dashboard', 'parameters']}
+                                    defaultOpenKeys={['dashboard', 'parameters', 'admin']}
                                     style={{ height: '100%', borderRight: 0 }}
                                     items={sidebarData}
                                     onClick={handleMenuChange}
