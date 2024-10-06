@@ -1,8 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, DatePicker, Descriptions, Divider, Form, Input, Modal, notification, Select, Space, Table, Tag, Upload } from 'antd';
-import { SearchOutlined, PaperClipOutlined, CheckOutlined, CloseOutlined, PlusCircleTwoTone, MinusCircleTwoTone } from '@ant-design/icons';
+import { Button, DatePicker, Descriptions, Divider, Dropdown, Form, Input, Menu, Modal, notification, Select, Space, Table, Tag, Upload } from 'antd';
+import { SearchOutlined, PaperClipOutlined, DownOutlined, PlusCircleTwoTone, MinusCircleTwoTone, PrinterOutlined } from '@ant-design/icons';
 import api from '@/services/api';
 import moment from 'moment';
+import { PDFDocument, rgb } from 'pdf-lib'; // Import pdf-lib
+
+const splitTextIntoLines = (text, maxLineLength) => {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    words.forEach((word) => {
+        // If adding the next word exceeds the max line length, push the current line to lines
+        if ((currentLine + word).length > maxLineLength) {
+            lines.push(currentLine.trim()); // Trim to remove any extra space
+            currentLine = word + ' '; // Start a new line with the current word
+        } else {
+            currentLine += word + ' '; // Continue building the current line
+        }
+    });
+
+    // Push the last line
+    if (currentLine) {
+        lines.push(currentLine.trim());
+    }
+
+    return lines;
+};
 
 const stageTypes = {
     stage_initiation: 'Stage d\'initiation',
@@ -106,6 +130,7 @@ const Stagaires = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDemande, setSelectedDemande] = useState(null);
+    const [selectedDemandePDF, setSelectedDemandePDF] = useState(null);
 
     const [alert, contextHolder] = notification.useNotification();
     const [form] = Form.useForm();
@@ -318,12 +343,162 @@ const Stagaires = () => {
             key: 'action',
             render: (_, record) => (
                 <Space size="middle" >
-
-
+                    <div className="flex justify-center">
+                        <Dropdown overlay={menu}>
+                            <Button onClick={() => setSelectedDemandePDF(record)} className="bg-blue-400 hover:bg-blue-600 text-white font-semibold flex items-center">
+                                Documents <PrinterOutlined className="ml-2" />
+                            </Button>
+                        </Dropdown>
+                    </div>
                 </Space >
             ),
         },
     ];
+
+    const printAttestation = async () => {
+        const existingPdfBytes = await fetch('/attestation_stage.pdf').then(res => res.arrayBuffer());
+
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        const fullname = selectedDemandePDF.firstname + ' ' + selectedDemandePDF.lastname;
+        const etablissement = selectedDemandePDF.studentDemand.etablissement ? selectedDemandePDF.studentDemand.etablissement.name : selectedDemandePDF.studentDemand.autre_etablissement
+        const { height } = firstPage.getSize();
+        firstPage.drawText(`${fullname}`, {
+            x: 200,
+            y: height - 330,
+            size: 12,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${etablissement}`, {
+            x: 200,
+            y: height - 370,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${moment(selectedDemandePDF.startDate).format("YYYY-MM-DD")}`, {
+            x: 250,
+            y: height - 465,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${moment(selectedDemandePDF.endDate).format("YYYY-MM-DD")}`, {
+            x: 350,
+            y: height - 465,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(selectedDemandePDF.service.name, {
+            x: 200,
+            y: height - 500,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        const modifiedPdfBytes = await pdfDoc.save();
+        const pdfBlob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+
+        // Open and print the PDF
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = pdfUrl;
+        document.body.appendChild(iframe);
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+    };
+
+    const printTransmission = async () => {
+        const existingPdfBytes = await fetch('/lettre_transmission.pdf').then(res => res.arrayBuffer());
+
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        const fullname = selectedDemandePDF.firstname + ' ' + selectedDemandePDF.lastname;
+        const etablissement = selectedDemandePDF.studentDemand.etablissement ? selectedDemandePDF.studentDemand.etablissement.name : selectedDemandePDF.studentDemand.autre_etablissement
+        const { height } = firstPage.getSize();
+
+
+        firstPage.drawText(selectedDemandePDF.service.name, {
+            x: 180,
+            y: height - 325,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        const stage_type = stageTypes[selectedDemandePDF.studentDemand.type_stage];
+
+        firstPage.drawText(stage_type, {
+            x: 200,
+            y: height - 350,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${etablissement}`, {
+            x: 200,
+            y: height - 380,
+            size: 10,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${selectedDemandePDF.studentDemand.specialty}`, {
+            x: 165,
+            y: height - 410,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${fullname}`, {
+            x: 180,
+            y: height - 435,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${moment(selectedDemandePDF.startDate).format("YYYY-MM-DD")}`, {
+            x: 200,
+            y: height - 510,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+        firstPage.drawText(`${moment(selectedDemandePDF.endDate).format("YYYY-MM-DD")}`, {
+            x: 300,
+            y: height - 510,
+            size: 11,
+            color: rgb(0, 0, 0),
+        });
+
+
+        const modifiedPdfBytes = await pdfDoc.save();
+        const pdfBlob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+
+        // Open and print the PDF
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = pdfUrl;
+        document.body.appendChild(iframe);
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+    };
+
+
+    const menu = (
+        <Menu>
+            <Menu.Item key="document1" onClick={printAttestation}>
+                Attestation de stage
+            </Menu.Item>
+            <Menu.Item key="document2" onClick={printTransmission}>
+                Lettre de transmission
+            </Menu.Item>
+        </Menu>
+    );
 
     return <>
         <Modal
@@ -544,6 +719,7 @@ const Stagaires = () => {
                     ]} />
                 </div >,
             }}
+
         />
         {contextHolder}
     </>

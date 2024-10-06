@@ -49,7 +49,15 @@ const updateById = async (req, res) => {
 
 const getAll = async (req, res) => {
     try {
-        const stagaires = await Stagaire.find().populate("service", "name _id").populate("encadrant", "name _id").populate("studentDemand");
+        const stagaires = await Stagaire.find().populate("service", "name _id")
+            .populate("encadrant", "name _id")
+            .populate({
+                path: 'studentDemand',
+                populate: {
+                    path: 'etablissement',
+                    select: 'name _id',
+                }
+            });
         res.status(200).json(stagaires);
     } catch (error) {
         res.status(500).json({ message: error.message });
