@@ -146,17 +146,19 @@ const verify = async (req, res) => {
         return res.status(400).json({ message: "CIN/Passport is required paramater" });
 
     try {
-        const studentDemand = await StudentDemand.findOne({ $or: [{ cin: student }, { passport: student }] });
+        const studentDemand = await StudentDemand.findOne({ $or: [{ cin: student }, { passport: student }] }).populate('etablissement');
         if (!studentDemand)
             return res.status(404).json({ message: "Student demand not found" });
 
         if (studentDemand.status == "accepted") {
-            const stagaire = await Stagaire.findOne({ studentDemand: studentDemand._id }).populate("service", "name").populate("encadrant", "name");
+            const stagaire = await Stagaire.findOne({ studentDemand: studentDemand._id }).populate("service", "name").populate("encadrant", "name")
             const data = {
                 fullname: `${studentDemand.first_name} ${studentDemand.last_name}`,
                 studentID: studentDemand.cin || studentDemand.passport,
                 submitedDate: studentDemand.createdAt,
                 reviewedDate: stagaire.createdAt,
+                etablissement: studentDemand.autre_etablissement || studentDemand.etablissement.name,
+                niveau: studentDemand.niveau,
                 stagaire: {
                     startDate: stagaire.startDate,
                     endDate: stagaire.endDate,
