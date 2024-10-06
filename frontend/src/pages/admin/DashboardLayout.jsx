@@ -55,6 +55,11 @@ const globalSidebarData = [
                 key: 'etablissements',
                 label: `Les établissements`,
                 path: '/dashboard/etablissements',
+            },
+            {
+                key: 'session',
+                label: `Gestion de la Session`,
+                path: '/dashboard/session',
             }
         ]
     },

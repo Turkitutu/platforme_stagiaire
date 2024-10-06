@@ -14,7 +14,7 @@ import DemandesTable from "./pages/admin/DemandesTable";
 import Encadrants from "./pages/admin/Encadrants";
 import Stagaires from "./pages/admin/Stagaires";
 import Users from "./pages/admin/Users";
-
+import Session from "./pages/admin/Session";
 import Login from "./pages/Login";
 
 import Services from "./pages/admin/Services";
@@ -79,6 +79,10 @@ const router = createBrowserRouter([
       {
         path: "users",
         element: <Users />,
+      },
+      {
+        path: "session",
+        element: <Session />,
       },
     ]
   },

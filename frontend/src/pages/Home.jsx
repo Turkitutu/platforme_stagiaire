@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from 'antd';
 import { ArrowRightOutlined, LoginOutlined } from '@ant-design/icons';
 import fb_logo from '../assets/facebook_logo.png';
 import { useNavigate } from 'react-router-dom';
+import api from '@/services/api';
 
 const LinkCard = ({ icon, image, title, text }) => {
     return (
@@ -30,6 +31,24 @@ const MainPage = () => {
         navigate('/verify');
     }
 
+    const [isSessionOpen, setIsSessionOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const fetchSessionStatus = async () => {
+        try {
+            const response = await api.get('/session');
+            setIsSessionOpen(response.data.isOpen);
+        } catch (error) {
+            console.error('Erreur lors de la récupération de l\'état de la session', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSessionStatus();
+    }, []);
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center">
             <div className="flex-1 flex flex-col justify-center items-center text-center bg-cover bg-center p-8"
@@ -40,9 +59,24 @@ const MainPage = () => {
                         Soumettez votre demande de stage ou vérifiez l'état de votre candidature.
                     </p>
                     <div className="flex justify-center space-x-4">
-                        <Button onClick={handleSubmitClick} type="primary" size="large" className="bg-green-500 hover:bg-green-600 text-white rounded-lg">
-                            Soumettre une demande de stage <ArrowRightOutlined />
-                        </Button>
+                        <div className="flex flex-col items-center">
+                            <Button
+                                onClick={handleSubmitClick}
+                                type="primary"
+                                size="large"
+                                className="bg-green-500 hover:bg-green-600 text-white rounded-lg"
+                                loading={loading}
+                                disabled={!isSessionOpen}  // Disable button if session is closed
+                            >
+                                Soumettre une demande de stage <ArrowRightOutlined />
+                            </Button>
+                            {/* Conditional Message */}
+                            {!isSessionOpen && !loading && (
+                                <p className="text-red-500 mt-2">
+                                    La session est fermée. Vous ne pouvez pas soumettre de demande de stage.
+                                </p>
+                            )}
+                        </div>
                         <Button onClick={handleCINClick} size="large" className="bg-white text-blue-600 hover:bg-blue-50 border-blue-600 rounded-lg">
                             Connexion avec CIN <LoginOutlined />
                         </Button>

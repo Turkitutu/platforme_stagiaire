@@ -28,9 +28,31 @@ const DemandeDeStage = () => {
     const [showOtherInput, setShowOtherInput] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate();
+    const [availableStages, setAvailableStages] = useState([]);
+
 
     const getData = async () => {
         try {
+
+
+            try {
+                const response = await api.get('/session');
+                const session = response.data;
+
+                setAvailableStages(session.availableStages.map(stage => ({
+                    value: stage,
+                    label: stageTypes[stage],
+                })));
+
+                setLoading(false);
+            } catch (error) {
+                console.error(error);
+                alert.error({
+                    message: 'Erreur',
+                    description: 'Une erreur s\'est produite lors du chargement des données. Veuillez réessayer plus tard.',
+                });
+            }
+
             const response = await api.get('/etablissement');
 
             const etablissementOptions = response.data
@@ -333,10 +355,7 @@ const DemandeDeStage = () => {
 
                                     placeholder="Sélectionnez le type de stage"
                                     className="rounded-md"
-                                    options={Object.entries(stageTypes).map(([key, value]) => ({
-                                        value: key,
-                                        label: value,
-                                    }))}
+                                    options={availableStages}
                                     onChange={handleStageTypeChange}
                                 />
                             </Form.Item>
